@@ -1,0 +1,106 @@
+{
+  "title": "HostWatch",
+  "config": {
+    "flow_title": "HostWatch-Knoten ({name})",
+    "step": {
+      "manual": {
+        "title": "HostWatch-Knoten manuell verbinden",
+        "description": "Gib die IP-Adresse oder den Hostnamen eines Knotens ein, der sich aktuell im Pairing-Modus befindet.",
+        "data": {
+          "host": "Host oder IP-Adresse",
+          "port": "Pairing-Port"
+        }
+      },
+      "discovered": {
+        "title": "HostWatch-Knoten gefunden",
+        "description": "HostWatch hat einen Knoten unter {host}:{port} gefunden. Der Knoten zeigt aktuell den Pairing-Code {pairing_code} an. Fahre hier fort und bestätige die Anfrage dann innerhalb von 2 Minuten lokal auf dem Knoten."
+      }
+    },
+    "error": {
+      "cannot_connect": "Verbindung zum Knoten fehlgeschlagen.",
+      "unknown": "Warte auf lokale Bestätigung auf dem Knoten. Bestätige die Anfrage dort und versuche es erneut."
+    }
+  },
+  "entity": {
+    "binary_sensor": {
+      "online": {
+        "name": "Betriebszustand"
+      },
+      "apt_updates_available": {
+        "name": "APT-Updates"
+      },
+      "bootloader_update_available": {
+        "name": "Bootloader-Update"
+      }
+    },
+    "button": {
+      "maintenance_mode": {
+        "name": "Wartungsmodus aktivieren"
+      },
+      "refresh_agent_release": {
+        "name": "Agent-Updates aktualisieren"
+      }
+    },
+    "sensor": {
+      "agent_version": {
+        "name": "Agent-Version"
+      },
+      "cpu_usage_percent": {
+        "name": "CPU-Auslastung"
+      },
+      "cpu_load_1m": {
+        "name": "CPU-Last 1m"
+      },
+      "cpu_load_5m": {
+        "name": "CPU-Last 5m"
+      },
+      "cpu_load_15m": {
+        "name": "CPU-Last 15m"
+      },
+      "cpu_temperature_c": {
+        "name": "CPU-Temperatur"
+      },
+      "memory_used_percent": {
+        "name": "Arbeitsspeicher belegt"
+      },
+      "memory_total_bytes": {
+        "name": "Arbeitsspeicher gesamt"
+      },
+      "memory_used_bytes": {
+        "name": "Arbeitsspeicher belegt absolut"
+      },
+      "memory_available_bytes": {
+        "name": "Arbeitsspeicher verfügbar"
+      },
+      "fs_root_used_percent": {
+        "name": "Root-Dateisystem belegt"
+      },
+      "fs_root_total_bytes": {
+        "name": "Root-Dateisystem gesamt"
+      },
+      "fs_root_used_bytes": {
+        "name": "Root-Dateisystem belegt absolut"
+      },
+      "fs_root_available_bytes": {
+        "name": "Root-Dateisystem verfügbar"
+      },
+      "uptime_seconds": {
+        "name": "Laufzeit"
+      },
+      "apt_upgradable_count": {
+        "name": "APT aktualisierbare Pakete"
+      },
+      "apt_last_checked": {
+        "name": "APT zuletzt geprüft"
+      },
+      "maintenance_mode": {
+        "name": "Wartungsmodus"
+      }
+    },
+    "update": {
+      "agent": {
+        "name": "Agent"
+      }
+    }
+  }
+}

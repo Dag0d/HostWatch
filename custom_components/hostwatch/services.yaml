@@ -1,0 +1,3 @@
+trigger_weekly_summary:
+  name: Trigger weekly summary
+  description: Create the HostWatch weekly APT and Raspberry Pi bootloader summary notifications immediately.

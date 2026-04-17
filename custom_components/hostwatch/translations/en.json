@@ -1,0 +1,106 @@
+{
+  "title": "HostWatch",
+  "config": {
+    "flow_title": "HostWatch Node ({name})",
+    "step": {
+      "manual": {
+        "title": "Manually connect HostWatch node",
+        "description": "Enter the IP address or hostname of a node that is currently in pairing mode.",
+        "data": {
+          "host": "Host or IP address",
+          "port": "Pairing port"
+        }
+      },
+      "discovered": {
+        "title": "HostWatch node found",
+        "description": "HostWatch found a node at {host}:{port}. The node currently shows pairing code {pairing_code}. Continue here, then confirm the request locally on the node within 2 minutes."
+      }
+    },
+    "error": {
+      "cannot_connect": "Failed to connect to the node.",
+      "unknown": "Waiting for local approval on the node. Confirm the request there and try again."
+    }
+  },
+  "entity": {
+    "binary_sensor": {
+      "online": {
+        "name": "Operating State"
+      },
+      "apt_updates_available": {
+        "name": "APT Updates"
+      },
+      "bootloader_update_available": {
+        "name": "Bootloader Update"
+      }
+    },
+    "button": {
+      "maintenance_mode": {
+        "name": "Enable Maintenance Mode"
+      },
+      "refresh_agent_release": {
+        "name": "Refresh Agent Updates"
+      }
+    },
+    "sensor": {
+      "agent_version": {
+        "name": "Agent Version"
+      },
+      "cpu_usage_percent": {
+        "name": "CPU Usage"
+      },
+      "cpu_load_1m": {
+        "name": "CPU Load 1m"
+      },
+      "cpu_load_5m": {
+        "name": "CPU Load 5m"
+      },
+      "cpu_load_15m": {
+        "name": "CPU Load 15m"
+      },
+      "cpu_temperature_c": {
+        "name": "CPU Temperature"
+      },
+      "memory_used_percent": {
+        "name": "Memory Used"
+      },
+      "memory_total_bytes": {
+        "name": "Memory Total"
+      },
+      "memory_used_bytes": {
+        "name": "Memory Used Absolute"
+      },
+      "memory_available_bytes": {
+        "name": "Memory Available"
+      },
+      "fs_root_used_percent": {
+        "name": "Root Filesystem Used"
+      },
+      "fs_root_total_bytes": {
+        "name": "Root Filesystem Total"
+      },
+      "fs_root_used_bytes": {
+        "name": "Root Filesystem Used Absolute"
+      },
+      "fs_root_available_bytes": {
+        "name": "Root Filesystem Available"
+      },
+      "uptime_seconds": {
+        "name": "Uptime"
+      },
+      "apt_upgradable_count": {
+        "name": "APT Upgradable Packages"
+      },
+      "apt_last_checked": {
+        "name": "APT Last Check"
+      },
+      "maintenance_mode": {
+        "name": "Maintenance Mode"
+      }
+    },
+    "update": {
+      "agent": {
+        "name": "Agent"
+      }
+    }
+  }
+}

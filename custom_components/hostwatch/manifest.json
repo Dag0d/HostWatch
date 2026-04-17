@@ -1,0 +1,29 @@
+{
+  "domain": "hostwatch",
+  "name": "HostWatch",
+  "codeowners": [
+    "@Dag0d"
+  ],
+  "config_flow": true,
+  "dependencies": [
+    "http",
+    "ssdp"
+  ],
+  "documentation": "https://github.com/Dag0d/HostWatch",
+  "integration_type": "hub",
+  "iot_class": "local_push",
+  "issue_tracker": "https://github.com/Dag0d/HostWatch/issues",
+  "requirements": [],
+  "ssdp": [
+    {
+      "nt": "urn:hostwatch:device:HostWatchNode:1"
+    },
+    {
+      "st": "urn:hostwatch:device:HostWatchNode:1"
+    }
+  ],
+  "version": "2026.4.2",
+  "zeroconf": [
+    "_hostwatch._tcp.local."
+  ]
+}
