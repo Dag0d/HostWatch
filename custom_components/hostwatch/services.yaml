@@ -1,3 +1,9 @@
-trigger_weekly_summary:
-  name: Trigger weekly summary
-  description: Create the HostWatch weekly APT and Raspberry Pi bootloader summary notifications immediately.
+trigger_apt_summary:
+  name: Trigger APT summary
+  description: Create the HostWatch APT summary notification immediately.
+trigger_bootloader_summary:
+  name: Trigger bootloader summary
+  description: Create the HostWatch Raspberry Pi bootloader summary notification immediately.
+refresh_agent_updates:
+  name: Refresh agent updates
+  description: Refresh the latest signed HostWatch agent release metadata immediately.

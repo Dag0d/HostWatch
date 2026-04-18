@@ -36,9 +36,6 @@
     "button": {
       "maintenance_mode": {
         "name": "Enable Maintenance Mode"
-      },
-      "refresh_agent_release": {
-        "name": "Refresh Agent Updates"
       }
     },
     "sensor": {

@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import logging
-import os
 from dataclasses import dataclass
 
 from homeassistant.components.button import ButtonEntity, ButtonEntityDescription
@@ -14,12 +13,10 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .device import hostwatch_device_info
 from .entity_ids import suggested_object_id
-from .release import get_release_manager
 from .runtime import get_runtime
 from .storage import get_storage
 
 _LOGGER = logging.getLogger(__name__)
-SHOW_AGENT_RELEASE_REFRESH_BUTTON = os.environ.get("HOSTWATCH_SHOW_AGENT_RELEASE_REFRESH_BUTTON") == "1"
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -37,19 +34,7 @@ BASE_BUTTONS: tuple[HostWatchButtonDescription, ...] = (
     ),
 )
 
-EXPERIMENTAL_BUTTONS: tuple[HostWatchButtonDescription, ...] = (
-    HostWatchButtonDescription(
-        key="refresh_agent_release",
-        translation_key="refresh_agent_release",
-        name="Refresh Agent Updates",
-        entity_category=EntityCategory.DIAGNOSTIC,
-        action="refresh_agent_release",
-    ),
-)
-
-BUTTONS: tuple[HostWatchButtonDescription, ...] = (
-    BASE_BUTTONS + EXPERIMENTAL_BUTTONS if SHOW_AGENT_RELEASE_REFRESH_BUTTON else BASE_BUTTONS
-)
+BUTTONS: tuple[HostWatchButtonDescription, ...] = BASE_BUTTONS
 
 
 async def async_setup_entry(
@@ -101,6 +86,3 @@ class HostWatchButton(ButtonEntity):
                 )
                 _LOGGER.info("Maintenance mode enabled for node %s until %s", self._node_id, enabled_until)
             return
-        if self.entity_description.action == "refresh_agent_release":
-            await get_release_manager(self.hass).async_refresh()
-            _LOGGER.info("Agent release metadata refresh triggered for node %s", self._node_id)

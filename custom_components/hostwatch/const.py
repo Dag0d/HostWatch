@@ -33,7 +33,9 @@ CONF_METRICS_WEBHOOK_URL = "metrics_webhook_url"
 CONF_COMMAND_RESULT_WEBHOOK_URL = "command_result_webhook_url"
 CONF_COMMAND_POLL_WEBHOOK_URL = "command_poll_webhook_url"
 
-SERVICE_TRIGGER_WEEKLY_SUMMARY = "trigger_weekly_summary"
+SERVICE_TRIGGER_APT_SUMMARY = "trigger_apt_summary"
+SERVICE_TRIGGER_BOOTLOADER_SUMMARY = "trigger_bootloader_summary"
+SERVICE_REFRESH_AGENT_UPDATES = "refresh_agent_updates"
 
 STORAGE_VERSION = 1
 STORAGE_KEY = f"{DOMAIN}_nodes"

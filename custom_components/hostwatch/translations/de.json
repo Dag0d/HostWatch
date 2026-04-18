@@ -36,9 +36,6 @@
     "button": {
       "maintenance_mode": {
         "name": "Wartungsmodus aktivieren"
-      },
-      "refresh_agent_release": {
-        "name": "Agent-Updates aktualisieren"
       }
     },
     "sensor": {

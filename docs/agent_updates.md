@@ -54,7 +54,7 @@ Commit only the public key. Never commit the private key.
 ## Release Flow
 
 1. Update the agent version in the `HostWatch-Agent` repository.
-2. Create and publish a GitHub Release there with the matching tag, for example `2026.4.2`.
+2. Create and publish a GitHub Release there with the matching tag, for example `2026.4.4`.
 3. GitHub Actions builds:
    - `hostwatch-agent-<version>.tar.gz`
    - `hostwatch-agent-manifest-<version>.json`

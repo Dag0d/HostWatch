@@ -1,18 +1,17 @@
-"""Scheduled HostWatch summary notifications."""
+"""HostWatch summary notifications."""
 
 from __future__ import annotations
 
 from datetime import datetime
 
 from homeassistant.components import persistent_notification
-from homeassistant.core import HomeAssistant, callback
-from homeassistant.helpers.event import async_track_time_change
+from homeassistant.core import HomeAssistant
 
 from .storage import get_storage
 
 
-def async_send_weekly_summary(hass: HomeAssistant) -> None:
-    """Create the weekly HostWatch summary notifications immediately."""
+def async_send_apt_summary(hass: HomeAssistant) -> None:
+    """Create the HostWatch APT summary notification immediately."""
     storage = get_storage(hass)
     active_node_ids = {entry.data.get("node_id") for entry in hass.config_entries.async_entries("hostwatch")}
     nodes = [node for node in storage.iter_nodes() if node.get("node_id") in active_node_ids]
@@ -20,7 +19,6 @@ def async_send_weekly_summary(hass: HomeAssistant) -> None:
         return
 
     apt_lines: list[str] = []
-    bootloader_sections: list[str] = []
 
     for node in nodes:
         node_name = node.get("node_name", node.get("node_id", "unknown"))
@@ -32,6 +30,26 @@ def async_send_weekly_summary(hass: HomeAssistant) -> None:
             f"- {node_name}: {upgradable if upgradable is not None else 'unknown'} updates (last check: {checked_at})"
         )
 
+    persistent_notification.async_create(
+        hass,
+        "## HostWatch APT Summary\n" + "\n".join(apt_lines),
+        title="HostWatch APT Summary",
+        notification_id="hostwatch_apt_summary",
+    )
+
+def async_send_bootloader_summary(hass: HomeAssistant) -> None:
+    """Create the HostWatch Raspberry Pi bootloader summary notification immediately."""
+    storage = get_storage(hass)
+    active_node_ids = {entry.data.get("node_id") for entry in hass.config_entries.async_entries("hostwatch")}
+    nodes = [node for node in storage.iter_nodes() if node.get("node_id") in active_node_ids]
+    if not nodes:
+        return
+
+    bootloader_sections: list[str] = []
+
+    for node in nodes:
+        node_name = node.get("node_name", node.get("node_id", "unknown"))
+        metrics = node.get("metrics", {})
         bootloader = metrics.get("bootloader", {})
         if bootloader.get("pending_count", 0) > 0:
             bootloader_sections.append(
@@ -46,33 +64,13 @@ def async_send_weekly_summary(hass: HomeAssistant) -> None:
                 )
             )
 
-    persistent_notification.async_create(
-        hass,
-        "## HostWatch APT Weekly Summary\n" + "\n".join(apt_lines),
-        title="HostWatch Weekly APT Summary",
-        notification_id="hostwatch_weekly_apt_summary",
-    )
-
     if bootloader_sections:
         persistent_notification.async_create(
             hass,
             "## HostWatch Raspberry Pi Bootloader Updates\n\n" + "\n\n".join(bootloader_sections),
             title="HostWatch Raspberry Pi Bootloader Updates",
-            notification_id="hostwatch_weekly_bootloader_summary",
+            notification_id="hostwatch_bootloader_summary",
         )
-
-
-@callback
-def async_setup_notifications(hass: HomeAssistant):
-    """Schedule weekly HostWatch summary notifications."""
-
-    @callback
-    def _handle_weekly_summary(now: datetime) -> None:
-        if now.weekday() != 6:
-            return
-        async_send_weekly_summary(hass)
-
-    return async_track_time_change(hass, _handle_weekly_summary, hour=3, minute=0, second=0)
 
 
 def _format_timestamp(value: str | None) -> str:

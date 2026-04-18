@@ -10,10 +10,17 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.event import async_track_time_interval
 
-from .const import DOMAIN, NODE_OFFLINE_AFTER_SECONDS, PLATFORMS, SERVICE_TRIGGER_WEEKLY_SUMMARY
+from .const import (
+    DOMAIN,
+    NODE_OFFLINE_AFTER_SECONDS,
+    PLATFORMS,
+    SERVICE_REFRESH_AGENT_UPDATES,
+    SERVICE_TRIGGER_APT_SUMMARY,
+    SERVICE_TRIGGER_BOOTLOADER_SUMMARY,
+)
 from .maintenance import async_setup_maintenance
-from .notifications import async_send_weekly_summary, async_setup_notifications
-from .release import async_setup_release_manager
+from .notifications import async_send_apt_summary, async_send_bootloader_summary
+from .release import async_setup_release_manager, get_release_manager
 from .runtime import HostWatchRuntime, get_runtime
 from .storage import async_ensure_storage, get_storage
 from .webhooks import async_register_node_webhooks, async_setup_webhooks, async_unregister_node_webhooks
@@ -29,7 +36,6 @@ async def async_setup(hass: HomeAssistant, config: dict) -> bool:
     await async_setup_webhooks(hass)
     await async_setup_maintenance(hass)
     await async_setup_release_manager(hass)
-    hass.data[DOMAIN].setdefault("notifications_unsub", async_setup_notifications(hass))
     if "stale_nodes_unsub" not in hass.data[DOMAIN]:
         async def handle_stale_nodes(now: datetime) -> None:
             await _async_mark_stale_nodes(hass, now)
@@ -39,14 +45,32 @@ async def async_setup(hass: HomeAssistant, config: dict) -> bool:
             handle_stale_nodes,
             timedelta(seconds=15),
         )
-    if not hass.services.has_service(DOMAIN, SERVICE_TRIGGER_WEEKLY_SUMMARY):
-        async def handle_trigger_weekly_summary(_call) -> None:
-            async_send_weekly_summary(hass)
+    if not hass.services.has_service(DOMAIN, SERVICE_TRIGGER_APT_SUMMARY):
+        async def handle_trigger_apt_summary(_call) -> None:
+            async_send_apt_summary(hass)
 
         hass.services.async_register(
             DOMAIN,
-            SERVICE_TRIGGER_WEEKLY_SUMMARY,
-            handle_trigger_weekly_summary,
+            SERVICE_TRIGGER_APT_SUMMARY,
+            handle_trigger_apt_summary,
+        )
+    if not hass.services.has_service(DOMAIN, SERVICE_TRIGGER_BOOTLOADER_SUMMARY):
+        async def handle_trigger_bootloader_summary(_call) -> None:
+            async_send_bootloader_summary(hass)
+
+        hass.services.async_register(
+            DOMAIN,
+            SERVICE_TRIGGER_BOOTLOADER_SUMMARY,
+            handle_trigger_bootloader_summary,
+        )
+    if not hass.services.has_service(DOMAIN, SERVICE_REFRESH_AGENT_UPDATES):
+        async def handle_refresh_agent_updates(_call) -> None:
+            await get_release_manager(hass).async_refresh()
+
+        hass.services.async_register(
+            DOMAIN,
+            SERVICE_REFRESH_AGENT_UPDATES,
+            handle_refresh_agent_updates,
         )
     return True
 
