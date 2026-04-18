@@ -14,7 +14,7 @@ from homeassistant.util import dt as dt_util
 
 from .storage import get_storage
 
-TRANSLATIONS_DIR = Path(__file__).with_name("translations")
+TRANSLATIONS_DIR = Path(__file__).with_name("notification_translations")
 
 
 def async_send_apt_summary(hass: HomeAssistant) -> None:
