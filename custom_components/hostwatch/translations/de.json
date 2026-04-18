@@ -99,5 +99,19 @@
         "name": "Agent"
       }
     }
+  },
+  "notifications": {
+    "unknown": "unbekannt",
+    "apt_summary_title": "HostWatch APT-Zusammenfassung",
+    "apt_summary_heading": "HostWatch APT-Zusammenfassung",
+    "bootloader_summary_title": "HostWatch Raspberry Pi Bootloader-Updates",
+    "bootloader_summary_heading": "HostWatch Raspberry Pi Bootloader-Updates",
+    "updates_label": "Updates",
+    "last_check_label": "Letzte Prüfung",
+    "track_label": "Track",
+    "pending_updates_label": "Verfügbare Updates",
+    "latest_release_label": "Neuestes Release",
+    "notes_label": "Hinweise",
+    "no_release_notes": "Keine Release Notes verfügbar."
   }
 }
