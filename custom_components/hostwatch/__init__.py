@@ -19,7 +19,11 @@ from .const import (
     SERVICE_TRIGGER_BOOTLOADER_SUMMARY,
 )
 from .maintenance import async_setup_maintenance
-from .notifications import async_send_apt_summary, async_send_bootloader_summary
+from .notifications import (
+    async_send_apt_summary,
+    async_send_bootloader_summary,
+    validate_notification_translations,
+)
 from .release import async_setup_release_manager, get_release_manager
 from .runtime import HostWatchRuntime, get_runtime
 from .storage import async_ensure_storage, get_storage
@@ -36,6 +40,7 @@ async def async_setup(hass: HomeAssistant, config: dict) -> bool:
     await async_setup_webhooks(hass)
     await async_setup_maintenance(hass)
     await async_setup_release_manager(hass)
+    validate_notification_translations()
     if "stale_nodes_unsub" not in hass.data[DOMAIN]:
         async def handle_stale_nodes(now: datetime) -> None:
             await _async_mark_stale_nodes(hass, now)

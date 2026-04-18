@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import logging
 from datetime import datetime
 from functools import lru_cache
 from pathlib import Path
@@ -15,6 +16,19 @@ from homeassistant.util import dt as dt_util
 from .storage import get_storage
 
 TRANSLATIONS_DIR = Path(__file__).with_name("notification_translations")
+_LOGGER = logging.getLogger(__name__)
+DEFAULT_NOTIFICATION_TRANSLATIONS = {
+    "unknown": "unknown",
+    "apt_summary_title": "HostWatch APT Summary",
+    "bootloader_summary_title": "HostWatch Raspberry Pi Bootloader Updates",
+    "updates_label": "Updates",
+    "last_check_label": "Last check",
+    "track_label": "Track",
+    "pending_updates_label": "Pending updates",
+    "latest_release_label": "Latest release",
+    "notes_label": "Notes",
+    "no_release_notes": "No release notes available.",
+}
 
 
 def async_send_apt_summary(hass: HomeAssistant) -> None:
@@ -27,7 +41,7 @@ def async_send_apt_summary(hass: HomeAssistant) -> None:
         return
     nodes = sorted(nodes, key=_node_sort_key)
 
-    apt_lines: list[str] = [f"## {t('apt_summary_heading')}", ""]
+    apt_lines: list[str] = []
 
     for node in nodes:
         node_name = node.get("node_name", node.get("node_id", t("unknown")))
@@ -65,7 +79,7 @@ def async_send_bootloader_summary(hass: HomeAssistant) -> None:
         return
     nodes = sorted(nodes, key=_node_sort_key)
 
-    bootloader_sections: list[str] = [f"## {t('bootloader_summary_heading')}", ""]
+    bootloader_sections: list[str] = []
 
     for node in nodes:
         node_name = node.get("node_name", node.get("node_id", t("unknown")))
@@ -86,7 +100,7 @@ def async_send_bootloader_summary(hass: HomeAssistant) -> None:
             )
             bootloader_sections.append("")
 
-    if len(bootloader_sections) > 2:
+    if bootloader_sections:
         persistent_notification.async_create(
             hass,
             "\n".join(bootloader_sections).strip(),
@@ -119,7 +133,8 @@ def _language(hass: HomeAssistant) -> str:
 
 
 def _translator(hass: HomeAssistant):
-    merged = dict(_load_notification_translations("en"))
+    merged = dict(DEFAULT_NOTIFICATION_TRANSLATIONS)
+    merged.update(_load_notification_translations("en"))
     language = _language(hass)
     if language != "en":
         merged.update(_load_notification_translations(language))
@@ -135,14 +150,32 @@ def _node_sort_key(node: dict[str, Any]) -> str:
     return str(node_name).lower()
 
 
+def validate_notification_translations() -> None:
+    """Log configuration issues for custom notification translations once during setup."""
+    _load_notification_translations.cache_clear()
+    en = _load_notification_translations("en")
+    if not en:
+        _LOGGER.warning(
+            "HostWatch notification translations for 'en' could not be loaded from %s; using built-in defaults",
+            TRANSLATIONS_DIR / "en.json",
+        )
+
+
 @lru_cache(maxsize=8)
 def _load_notification_translations(language: str) -> dict[str, str]:
     path = TRANSLATIONS_DIR / f"{language}.json"
     if not path.exists():
+        _LOGGER.warning("HostWatch notification translation file not found: %s", path)
         return {}
     try:
         data = json.loads(path.read_text(encoding="utf-8"))
-    except (OSError, ValueError):
+    except OSError as exc:
+        _LOGGER.warning("Failed to read HostWatch notification translation file %s: %s", path, exc)
         return {}
-    notifications = data.get("notifications", {})
-    return notifications if isinstance(notifications, dict) else {}
+    except ValueError as exc:
+        _LOGGER.warning("Failed to parse HostWatch notification translation file %s: %s", path, exc)
+        return {}
+    if not isinstance(data, dict):
+        _LOGGER.warning("Invalid HostWatch notification translation structure in %s: expected top-level object", path)
+        return {}
+    return {str(key): str(value) for key, value in data.items()}
