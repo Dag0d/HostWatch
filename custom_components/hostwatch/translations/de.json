@@ -99,5 +99,60 @@
         "name": "Agent"
       }
     }
+  },
+  "services": {
+    "get_apt_summary": {
+      "name": "APT-Zusammenfassung abrufen",
+      "description": "Erstellt eine HostWatch-APT-Zusammenfassung für alle aktiven Knoten oder für die ausgewählten HostWatch-Geräte. Die strukturierten Response-Daten sind immer auf Englisch. Das optionale Raw-Feld ist ebenfalls immer Englisch.",
+      "sections": {
+        "output_options": {
+          "name": "Ausgabeoptionen"
+        }
+      },
+      "fields": {
+        "create_notification": {
+          "name": "Benachrichtigung erstellen",
+          "description": "Erstellt zusätzlich zur Action-Response die übliche übersetzte dauerhafte Benachrichtigung."
+        },
+        "include_raw": {
+          "name": "Raw-Ausgabe einschließen",
+          "description": "Fügt die rohe englische Markdown-Zusammenfassung in die Action-Response ein."
+        }
+      }
+    },
+    "get_bootloader_summary": {
+      "name": "Bootloader-Zusammenfassung abrufen",
+      "description": "Erstellt eine HostWatch-Raspberry-Pi-Bootloader-Zusammenfassung für alle aktiven Knoten oder für die ausgewählten HostWatch-Geräte. Die strukturierten Response-Daten sind immer auf Englisch. Das optionale Raw-Feld ist ebenfalls immer Englisch.",
+      "sections": {
+        "output_options": {
+          "name": "Ausgabeoptionen"
+        }
+      },
+      "fields": {
+        "create_notification": {
+          "name": "Benachrichtigung erstellen",
+          "description": "Erstellt zusätzlich zur Action-Response die übliche übersetzte dauerhafte Benachrichtigung."
+        },
+        "include_raw": {
+          "name": "Raw-Ausgabe einschließen",
+          "description": "Fügt die rohe englische Markdown-Zusammenfassung in die Action-Response ein."
+        }
+      }
+    },
+    "refresh_agent_updates": {
+      "name": "Agent-Updates aktualisieren",
+      "description": "Aktualisiert sofort die Metadaten des neuesten signierten HostWatch-Agent-Releases."
+    }
+  },
+  "exceptions": {
+    "unknown_device_id": {
+      "message": "Unbekannte Geräte-ID: {device_id}"
+    },
+    "device_not_hostwatch": {
+      "message": "Gerät {device_id} ist kein HostWatch-Gerät"
+    },
+    "no_matching_hostwatch_nodes": {
+      "message": "Keine HostWatch-Knoten entsprechen dem angegebenen Ziel"
+    }
   }
 }

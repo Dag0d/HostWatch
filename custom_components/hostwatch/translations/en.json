@@ -99,5 +99,60 @@
         "name": "Agent"
       }
     }
+  },
+  "services": {
+    "get_apt_summary": {
+      "name": "Get APT summary",
+      "description": "Build a HostWatch APT summary for all active nodes or for the selected HostWatch devices. The response data is always structured in English. The optional raw field is also always English.",
+      "sections": {
+        "output_options": {
+          "name": "Output options"
+        }
+      },
+      "fields": {
+        "create_notification": {
+          "name": "Create notification",
+          "description": "Create the usual translated persistent notification in addition to the action response."
+        },
+        "include_raw": {
+          "name": "Include raw output",
+          "description": "Include the raw English markdown summary in the action response."
+        }
+      }
+    },
+    "get_bootloader_summary": {
+      "name": "Get bootloader summary",
+      "description": "Build a HostWatch Raspberry Pi bootloader summary for all active nodes or for the selected HostWatch devices. The response data is always structured in English. The optional raw field is also always English.",
+      "sections": {
+        "output_options": {
+          "name": "Output options"
+        }
+      },
+      "fields": {
+        "create_notification": {
+          "name": "Create notification",
+          "description": "Create the usual translated persistent notification in addition to the action response."
+        },
+        "include_raw": {
+          "name": "Include raw output",
+          "description": "Include the raw English markdown summary in the action response."
+        }
+      }
+    },
+    "refresh_agent_updates": {
+      "name": "Refresh agent updates",
+      "description": "Refresh the latest signed HostWatch agent release metadata immediately."
+    }
+  },
+  "exceptions": {
+    "unknown_device_id": {
+      "message": "Unknown device ID: {device_id}"
+    },
+    "device_not_hostwatch": {
+      "message": "Device {device_id} is not a HostWatch device"
+    },
+    "no_matching_hostwatch_nodes": {
+      "message": "No HostWatch nodes matched the provided target"
+    }
   }
 }

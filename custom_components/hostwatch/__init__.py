@@ -5,8 +5,10 @@ from __future__ import annotations
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
+import voluptuous as vol
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.core import HomeAssistant
+from homeassistant.const import ATTR_DEVICE_ID
+from homeassistant.core import HomeAssistant, ServiceCall, ServiceResponse, SupportsResponse
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.event import async_track_time_interval
 
@@ -15,13 +17,13 @@ from .const import (
     NODE_OFFLINE_AFTER_SECONDS,
     PLATFORMS,
     SERVICE_REFRESH_AGENT_UPDATES,
-    SERVICE_TRIGGER_APT_SUMMARY,
-    SERVICE_TRIGGER_BOOTLOADER_SUMMARY,
+    SERVICE_GET_APT_SUMMARY,
+    SERVICE_GET_BOOTLOADER_SUMMARY,
 )
 from .maintenance import async_setup_maintenance
 from .notifications import (
-    async_send_apt_summary,
-    async_send_bootloader_summary,
+    get_apt_summary,
+    get_bootloader_summary,
     validate_notification_translations,
 )
 from .release import async_setup_release_manager, get_release_manager
@@ -30,6 +32,13 @@ from .storage import async_ensure_storage, get_storage
 from .webhooks import async_register_node_webhooks, async_setup_webhooks, async_unregister_node_webhooks
 
 CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
+SUMMARY_SERVICE_SCHEMA = vol.Schema(
+    {
+        vol.Optional(ATTR_DEVICE_ID): vol.Any(cv.ensure_list, [str]),
+        vol.Optional("create_notification", default=True): cv.boolean,
+        vol.Optional("include_raw", default=False): cv.boolean,
+    }
+)
 
 
 async def async_setup(hass: HomeAssistant, config: dict) -> bool:
@@ -50,23 +59,39 @@ async def async_setup(hass: HomeAssistant, config: dict) -> bool:
             handle_stale_nodes,
             timedelta(seconds=15),
         )
-    if not hass.services.has_service(DOMAIN, SERVICE_TRIGGER_APT_SUMMARY):
-        async def handle_trigger_apt_summary(_call) -> None:
-            async_send_apt_summary(hass)
+    if not hass.services.has_service(DOMAIN, SERVICE_GET_APT_SUMMARY):
+        async def handle_get_apt_summary(call: ServiceCall) -> ServiceResponse:
+            response = get_apt_summary(
+                hass,
+                device_ids=_device_ids_from_call(call),
+                include_raw=bool(call.data.get("include_raw", False)),
+                create_notification=bool(call.data.get("create_notification", True)),
+            )
+            return response if call.return_response else None
 
         hass.services.async_register(
             DOMAIN,
-            SERVICE_TRIGGER_APT_SUMMARY,
-            handle_trigger_apt_summary,
+            SERVICE_GET_APT_SUMMARY,
+            handle_get_apt_summary,
+            schema=SUMMARY_SERVICE_SCHEMA,
+            supports_response=SupportsResponse.OPTIONAL,
         )
-    if not hass.services.has_service(DOMAIN, SERVICE_TRIGGER_BOOTLOADER_SUMMARY):
-        async def handle_trigger_bootloader_summary(_call) -> None:
-            async_send_bootloader_summary(hass)
+    if not hass.services.has_service(DOMAIN, SERVICE_GET_BOOTLOADER_SUMMARY):
+        async def handle_get_bootloader_summary(call: ServiceCall) -> ServiceResponse:
+            response = get_bootloader_summary(
+                hass,
+                device_ids=_device_ids_from_call(call),
+                include_raw=bool(call.data.get("include_raw", False)),
+                create_notification=bool(call.data.get("create_notification", True)),
+            )
+            return response if call.return_response else None
 
         hass.services.async_register(
             DOMAIN,
-            SERVICE_TRIGGER_BOOTLOADER_SUMMARY,
-            handle_trigger_bootloader_summary,
+            SERVICE_GET_BOOTLOADER_SUMMARY,
+            handle_get_bootloader_summary,
+            schema=SUMMARY_SERVICE_SCHEMA,
+            supports_response=SupportsResponse.OPTIONAL,
         )
     if not hass.services.has_service(DOMAIN, SERVICE_REFRESH_AGENT_UPDATES):
         async def handle_refresh_agent_updates(_call) -> None:
@@ -78,6 +103,15 @@ async def async_setup(hass: HomeAssistant, config: dict) -> bool:
             handle_refresh_agent_updates,
         )
     return True
+
+
+def _device_ids_from_call(call: ServiceCall) -> list[str] | None:
+    device_ids = call.data.get(ATTR_DEVICE_ID)
+    if not device_ids:
+        return None
+    if isinstance(device_ids, str):
+        return [device_ids]
+    return [str(device_id) for device_id in device_ids]
 
 
 async def _async_mark_stale_nodes(hass: HomeAssistant, now: datetime) -> None:
