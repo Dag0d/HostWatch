@@ -110,6 +110,10 @@
         }
       },
       "fields": {
+        "device_id": {
+          "name": "HostWatch devices",
+          "description": "Optionally limit the summary to one or more HostWatch devices. Leave empty to include all active HostWatch nodes."
+        },
         "create_notification": {
           "name": "Create notification",
           "description": "Create the usual translated persistent notification in addition to the action response."
@@ -129,6 +133,10 @@
         }
       },
       "fields": {
+        "device_id": {
+          "name": "HostWatch devices",
+          "description": "Optionally limit the summary to one or more HostWatch devices. Leave empty to include all active HostWatch nodes."
+        },
         "create_notification": {
           "name": "Create notification",
           "description": "Create the usual translated persistent notification in addition to the action response."

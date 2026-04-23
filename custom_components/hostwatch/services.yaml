@@ -1,8 +1,10 @@
 get_apt_summary:
-  target:
-    device:
-      integration: hostwatch
   fields:
+    device_id:
+      selector:
+        device:
+          integration: hostwatch
+          multiple: true
     output_options:
       collapsed: false
       fields:
@@ -17,10 +19,12 @@ get_apt_summary:
           selector:
             boolean:
 get_bootloader_summary:
-  target:
-    device:
-      integration: hostwatch
   fields:
+    device_id:
+      selector:
+        device:
+          integration: hostwatch
+          multiple: true
     output_options:
       collapsed: false
       fields:
