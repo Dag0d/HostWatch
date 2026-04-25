@@ -44,6 +44,8 @@ class HostWatchAgentUpdateEntity(UpdateEntity):
         self._node_id = entry.data["node_id"]
         self._node = node
         self._state = get_runtime(hass).get_state(self._node_id) or node
+        self._pending_install = False
+        self._pending_target_version: str | None = None
         self._attr_unique_id = f"{self._node_id}_agent"
         self._attr_device_info = hostwatch_device_info(hass, node)
 
@@ -84,12 +86,35 @@ class HostWatchAgentUpdateEntity(UpdateEntity):
     @property
     def in_progress(self) -> bool:
         """Return whether an agent update command is currently queued or running."""
+        if self._pending_install:
+            return True
+        return self._has_running_update_command()
+
+    def _has_running_update_command(self) -> bool:
+        """Return whether an agent update command is currently queued or running in storage."""
         runs = get_storage(self.hass).get_recent_command_runs(self._node_id)
         for run in runs:
             if run.get("command_type") != "agent_update":
                 continue
             return run.get("status") in {"queued", "running"}
         return False
+
+    def _refresh_pending_install_state(self) -> None:
+        """Drop the optimistic install state once storage or node state confirms progress/completion."""
+        if not self._pending_install:
+            return
+        if self._has_running_update_command():
+            return
+        if (
+            self._pending_target_version
+            and self.installed_version
+            and compare_versions(self.installed_version, self._pending_target_version) >= 0
+        ):
+            self._pending_install = False
+            self._pending_target_version = None
+            return
+        self._pending_install = False
+        self._pending_target_version = None
 
     @property
     def available(self) -> bool:
@@ -113,6 +138,9 @@ class HostWatchAgentUpdateEntity(UpdateEntity):
         target_version = version or self.latest_version
         if not target_version:
             return
+        self._pending_install = True
+        self._pending_target_version = target_version
+        self.async_write_ha_state()
         await get_storage(self.hass).async_create_command_run(
             self._node_id,
             "agent_update",
@@ -127,14 +155,17 @@ class HostWatchAgentUpdateEntity(UpdateEntity):
         @callback
         def handle_node_update() -> None:
             self._state = get_runtime(self.hass).get_state(self._node_id)
+            self._refresh_pending_install_state()
             self.async_write_ha_state()
 
         @callback
         def handle_release_update() -> None:
+            self._refresh_pending_install_state()
             self.async_write_ha_state()
 
         @callback
         def handle_command_update() -> None:
+            self._refresh_pending_install_state()
             self.async_write_ha_state()
 
         self.async_on_remove(

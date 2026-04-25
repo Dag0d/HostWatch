@@ -263,7 +263,7 @@ class HostWatchSensorManager:
                 continue
             if description.requires_vpn and not _is_vpn_node(state):
                 continue
-            if description.key != "maintenance_mode" and not _path_has_value(state, description.value_path):
+            if description.key not in {"maintenance_mode", "vpn_last_reconnect"} and not _path_has_value(state, description.value_path):
                 continue
             self._known_keys.add(description.key)
             new_entities.append(HostWatchSensor(self.hass, self.entry, description, state))
