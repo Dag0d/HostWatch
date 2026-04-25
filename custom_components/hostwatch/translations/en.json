@@ -90,6 +90,12 @@
       "apt_last_checked": {
         "name": "APT Last Check"
       },
+      "vpn_reconnects_today": {
+        "name": "VPN Reconnects Today"
+      },
+      "vpn_last_reconnect": {
+        "name": "VPN Last Reconnect"
+      },
       "maintenance_mode": {
         "name": "Maintenance Mode"
       }

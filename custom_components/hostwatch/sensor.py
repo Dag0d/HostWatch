@@ -34,6 +34,7 @@ from .storage import get_storage
 class HostWatchSensorDescription(SensorEntityDescription):
     value_path: tuple[str, ...]
     convert_bytes_to_gb: bool = False
+    requires_vpn: bool = False
 
 
 SENSORS: tuple[HostWatchSensorDescription, ...] = (
@@ -179,6 +180,23 @@ SENSORS: tuple[HostWatchSensorDescription, ...] = (
         device_class=SensorDeviceClass.TIMESTAMP,
     ),
     HostWatchSensorDescription(
+        key="vpn_reconnects_today",
+        translation_key="vpn_reconnects_today",
+        name="VPN Reconnects Today",
+        value_path=("metrics", "vpn_recovery", "reconnects_today"),
+        entity_category=EntityCategory.DIAGNOSTIC,
+        requires_vpn=True,
+    ),
+    HostWatchSensorDescription(
+        key="vpn_last_reconnect",
+        translation_key="vpn_last_reconnect",
+        name="VPN Last Reconnect",
+        value_path=("metrics", "vpn_recovery", "last_reconnect_at"),
+        entity_category=EntityCategory.DIAGNOSTIC,
+        device_class=SensorDeviceClass.TIMESTAMP,
+        requires_vpn=True,
+    ),
+    HostWatchSensorDescription(
         key="maintenance_mode",
         translation_key="maintenance_mode",
         name="Maintenance Mode",
@@ -243,6 +261,8 @@ class HostWatchSensorManager:
         for description in SENSORS:
             if description.key in self._known_keys:
                 continue
+            if description.requires_vpn and not _is_vpn_node(state):
+                continue
             if description.key != "maintenance_mode" and not _path_has_value(state, description.value_path):
                 continue
             self._known_keys.add(description.key)
@@ -290,6 +310,8 @@ class HostWatchSensor(SensorEntity):
         if self.entity_description.key == "maintenance_mode":
             value = _value_at_path(self._state, self.entity_description.value_path)
             return "on" if _is_future_timestamp(value) else "off"
+        if self.entity_description.requires_vpn and not _is_vpn_node(self._state):
+            return None
 
         value = self._state
         for segment in self.entity_description.value_path:
@@ -300,7 +322,7 @@ class HostWatchSensor(SensorEntity):
             return None
         if self.entity_description.key == "uptime_seconds" and isinstance(value, (int, float)):
             return _format_uptime(value)
-        if self.entity_description.key == "apt_last_checked" and isinstance(value, str):
+        if self.entity_description.key in {"apt_last_checked", "vpn_last_reconnect"} and isinstance(value, str):
             return datetime.fromisoformat(value.replace("Z", "+00:00"))
         if self.entity_description.convert_bytes_to_gb and isinstance(value, (int, float)):
             return round(value / (1000**3), 2)
@@ -401,6 +423,10 @@ def _ip_interfaces(payload: dict[str, Any]) -> list[str]:
         if interface not in interfaces:
             interfaces.append(interface)
     return interfaces
+
+
+def _is_vpn_node(payload: dict[str, Any]) -> bool:
+    return _value_at_path(payload, ("platform", "connectionStyle")) == "vpn"
 
 
 def _slugify(value: str) -> str:
