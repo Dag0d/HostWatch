@@ -22,7 +22,7 @@
       "st": "urn:hostwatch:device:HostWatchNode:1"
     }
   ],
-  "version": "2026.4.9",
+  "version": "2026.4.10",
   "zeroconf": [
     "_hostwatch._tcp.local."
   ]
