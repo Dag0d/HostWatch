@@ -5,7 +5,6 @@ from __future__ import annotations
 import json
 import logging
 from datetime import datetime
-from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
@@ -20,6 +19,7 @@ from .storage import get_storage
 
 TRANSLATIONS_DIR = Path(__file__).with_name("notification_translations")
 _LOGGER = logging.getLogger(__name__)
+_NOTIFICATION_TRANSLATIONS: dict[str, dict[str, str]] = {}
 DEFAULT_NOTIFICATION_TRANSLATIONS = {
     "unknown": "unknown",
     "apt_summary_title": "HostWatch APT Summary",
@@ -34,15 +34,18 @@ DEFAULT_NOTIFICATION_TRANSLATIONS = {
 }
 
 
-def validate_notification_translations() -> None:
-    """Log configuration issues for custom notification translations once during setup."""
-    _load_notification_translations.cache_clear()
-    en = _load_notification_translations("en")
+async def async_validate_notification_translations(hass: HomeAssistant) -> None:
+    """Preload notification translations without blocking the event loop."""
+    _NOTIFICATION_TRANSLATIONS.clear()
+    en = await _async_load_notification_translations(hass, "en")
     if not en:
         _LOGGER.warning(
             "HostWatch notification translations for 'en' could not be loaded from %s; using built-in defaults",
             TRANSLATIONS_DIR / "en.json",
         )
+    language = _normalize_language(getattr(hass.config, "language", None) or "en")
+    if language != "en":
+        await _async_load_notification_translations(hass, language)
 
 
 def get_apt_summary(
@@ -347,19 +350,15 @@ def _raw_value(value: Any) -> str:
 
 
 def _language(hass: HomeAssistant) -> str:
-    language = getattr(hass.config, "language", None) or "en"
-    normalized = str(language).replace("-", "_").lower()
-    if normalized.startswith("de"):
-        return "de"
-    return "en"
+    return _normalize_language(getattr(hass.config, "language", None) or "en")
 
 
 def _translator(hass: HomeAssistant):
     merged = dict(DEFAULT_NOTIFICATION_TRANSLATIONS)
-    merged.update(_load_notification_translations("en"))
+    merged.update(_get_notification_translations("en"))
     language = _language(hass)
     if language != "en":
-        merged.update(_load_notification_translations(language))
+        merged.update(_get_notification_translations(language))
 
     def translate(key: str) -> str:
         return merged.get(key, key)
@@ -372,8 +371,28 @@ def _node_sort_key(node: dict[str, Any]) -> str:
     return str(node_name).lower()
 
 
-@lru_cache(maxsize=8)
-def _load_notification_translations(language: str) -> dict[str, str]:
+def _normalize_language(language: str) -> str:
+    normalized = str(language).replace("-", "_").lower()
+    if normalized.startswith("de"):
+        return "de"
+    return "en"
+
+
+def _get_notification_translations(language: str) -> dict[str, str]:
+    return _NOTIFICATION_TRANSLATIONS.get(language, {})
+
+
+async def _async_load_notification_translations(hass: HomeAssistant, language: str) -> dict[str, str]:
+    language = _normalize_language(language)
+    cached = _NOTIFICATION_TRANSLATIONS.get(language)
+    if cached is not None:
+        return cached
+    data = await hass.async_add_executor_job(_load_notification_translations_file, language)
+    _NOTIFICATION_TRANSLATIONS[language] = data
+    return data
+
+
+def _load_notification_translations_file(language: str) -> dict[str, str]:
     path = TRANSLATIONS_DIR / f"{language}.json"
     if not path.exists():
         _LOGGER.warning("HostWatch notification translation file not found: %s", path)
