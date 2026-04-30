@@ -78,6 +78,12 @@ COMMANDS: dict[str, dict[str, Any]] = {
         "critical": True,
         "requires_raspberry_pi_bootloader": True,
     },
+    "show_vpn_recovery_history": {
+        "section": "vpn",
+        "label_key": "command_show_vpn_recovery_history",
+        "critical": False,
+        "requires_vpn": True,
+    },
     "reboot": {
         "section": "power",
         "label_key": "command_reboot",
@@ -93,6 +99,7 @@ COMMANDS: dict[str, dict[str, Any]] = {
 SECTIONS: dict[str, dict[str, str]] = {
     "apt": {"label_key": "section_apt"},
     "eeprom": {"label_key": "section_eeprom"},
+    "vpn": {"label_key": "section_vpn"},
     "power": {"label_key": "section_power"},
 }
 
@@ -124,6 +131,8 @@ def get_available_commands(node: dict[str, Any]) -> list[dict[str, Any]]:
         if description.get("requires_raspberry_pi_bootloader") and not _has_raspberry_pi_bootloader(node):
             continue
         if description.get("requires_raspberry_pi_5") and not _is_raspberry_pi_5(node):
+            continue
+        if description.get("requires_vpn") and not _is_vpn_node(node):
             continue
         commands.append(
             {
@@ -173,6 +182,11 @@ def _has_raspberry_pi_bootloader(node: dict[str, Any]) -> bool:
     bootloader = metrics.get("bootloader", {}) if isinstance(metrics, dict) else {}
     chip = bootloader.get("chip")
     return chip in {"2711", "2712"}
+
+
+def _is_vpn_node(node: dict[str, Any]) -> bool:
+    platform = node.get("platform", {})
+    return platform.get("connectionStyle") == "vpn"
 
 
 def _command_params(command: dict[str, Any], payload: dict[str, Any]) -> dict[str, Any] | None:
