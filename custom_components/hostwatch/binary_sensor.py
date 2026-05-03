@@ -148,6 +148,8 @@ class HostWatchBinarySensor(BinarySensorEntity):
     @property
     def is_on(self) -> bool | None:
         """Return true when an update is available."""
+        if self.entity_description.key != "online" and _is_node_offline(self._state):
+            return None
         value = _value_at_path(self._state, self.entity_description.value_path)
         if value is None:
             return None
@@ -181,3 +183,7 @@ def _value_at_path(payload: dict[str, Any] | None, path: tuple[str, ...]) -> Any
             return None
         value = value[segment]
     return value
+
+
+def _is_node_offline(payload: dict[str, Any]) -> bool:
+    return payload.get("online") is False

@@ -307,6 +307,8 @@ class HostWatchSensor(SensorEntity):
     @property
     def native_value(self) -> Any:
         """Return the sensor state."""
+        if _is_node_offline(self._state):
+            return None
         if self.entity_description.key == "maintenance_mode":
             value = _value_at_path(self._state, self.entity_description.value_path)
             return "on" if _is_future_timestamp(value) else "off"
@@ -376,6 +378,8 @@ class HostWatchInterfaceIpSensor(SensorEntity):
 
     @property
     def native_value(self) -> str | None:
+        if _is_node_offline(self._state):
+            return None
         for item in _value_at_path(self._state, ("platform", "ipAddresses")) or []:
             if not isinstance(item, dict):
                 continue
@@ -427,6 +431,10 @@ def _ip_interfaces(payload: dict[str, Any]) -> list[str]:
 
 def _is_vpn_node(payload: dict[str, Any]) -> bool:
     return _value_at_path(payload, ("platform", "connectionStyle")) == "vpn"
+
+
+def _is_node_offline(payload: dict[str, Any]) -> bool:
+    return payload.get("online") is False
 
 
 def _slugify(value: str) -> str:
