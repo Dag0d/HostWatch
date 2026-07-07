@@ -44,7 +44,11 @@ class HostWatchAgentUpdateEntity(UpdateEntity):
     _attr_has_entity_name = True
     _attr_translation_key = "agent"
     _attr_device_class = UpdateDeviceClass.FIRMWARE
-    _attr_supported_features = UpdateEntityFeature.INSTALL | UpdateEntityFeature.PROGRESS
+    _attr_supported_features = (
+        UpdateEntityFeature.INSTALL
+        | UpdateEntityFeature.PROGRESS
+        | UpdateEntityFeature.RELEASE_NOTES
+    )
     _attr_should_poll = False
     _attr_available = True
 
@@ -70,7 +74,7 @@ class HostWatchAgentUpdateEntity(UpdateEntity):
         self._attr_installed_version = self._state.get("agent_version")
         self._attr_latest_version = release.get("version") if release else None
         notes = release.get("release_notes") if release else None
-        self._attr_release_summary = notes if isinstance(notes, str) and notes.strip() else None
+        self._attr_release_summary = summarize_release_notes(notes)
         url = release.get("release_url") if release else None
         self._attr_release_url = url if isinstance(url, str) else None
 
@@ -127,6 +131,12 @@ class HostWatchAgentUpdateEntity(UpdateEntity):
         async_notify_command_run_updated(self.hass, self._node_id)
         self.async_write_ha_state()
 
+    async def async_release_notes(self) -> str | None:
+        """Return the full release notes for the latest agent update."""
+        release = get_release_manager(self.hass).release
+        notes = release.get("release_notes") if release else None
+        return notes if isinstance(notes, str) and notes.strip() else None
+
     async def async_added_to_hass(self) -> None:
         """Subscribe to node, release, and command-run updates."""
 
@@ -177,7 +187,11 @@ class HostWatchAptUpdateEntity(UpdateEntity):
 
     _attr_has_entity_name = True
     _attr_translation_key = "apt_packages"
-    _attr_supported_features = UpdateEntityFeature.INSTALL | UpdateEntityFeature.PROGRESS
+    _attr_supported_features = (
+        UpdateEntityFeature.INSTALL
+        | UpdateEntityFeature.PROGRESS
+        | UpdateEntityFeature.RELEASE_NOTES
+    )
     _attr_should_poll = False
 
     def __init__(self, hass: HomeAssistant, entry: ConfigEntry, node: dict[str, Any]) -> None:
@@ -208,13 +222,7 @@ class HostWatchAptUpdateEntity(UpdateEntity):
         self._attr_installed_version = _format_marker(self._installed_marker)
         self._attr_latest_version = _format_marker(self._latest_marker)
         preview = snapshot.get("preview")
-        self._attr_release_summary = (
-            preview
-            if _apt_snapshot_has_updates(snapshot, self._installed_marker)
-            and isinstance(preview, str)
-            and preview.strip()
-            else None
-        )
+        self._attr_release_summary = _apt_release_summary(snapshot, self._installed_marker, preview)
         self._attr_release_url = None
 
     def _has_running_update_command(self) -> bool:
@@ -266,6 +274,14 @@ class HostWatchAptUpdateEntity(UpdateEntity):
         await get_storage(self.hass).async_create_command_run(self._node_id, "apt_upgrade")
         async_notify_command_run_updated(self.hass, self._node_id)
         self.async_write_ha_state()
+
+    async def async_release_notes(self) -> str | None:
+        """Return the full APT upgrade preview for the latest prepared snapshot."""
+        snapshot = _apt_update_snapshot(self._state)
+        preview = snapshot.get("preview")
+        if not _apt_snapshot_has_updates(snapshot, self._installed_marker):
+            return None
+        return preview if isinstance(preview, str) and preview.strip() else None
 
     async def async_added_to_hass(self) -> None:
         """Subscribe to node and command-run updates."""
@@ -371,3 +387,30 @@ def _format_marker(value: str | None) -> str | None:
     except ValueError:
         return value
     return dt_util.as_local(parsed).strftime("%Y-%m-%d %H:%M")
+
+
+def summarize_release_notes(notes: Any) -> str | None:
+    if not isinstance(notes, str):
+        return None
+    text = " ".join(line.strip() for line in notes.splitlines() if line.strip())
+    if not text:
+        return None
+    if len(text) <= 255:
+        return text
+    return text[:252].rstrip() + "..."
+
+
+def _apt_release_summary(
+    snapshot: dict[str, Any],
+    installed_marker: str | None,
+    preview: Any,
+) -> str | None:
+    if not _apt_snapshot_has_updates(snapshot, installed_marker):
+        return None
+    count = snapshot.get("upgradable_count")
+    checked_at = _format_marker(snapshot.get("checked_at")) if isinstance(snapshot.get("checked_at"), str) else None
+    if isinstance(count, int) and checked_at:
+        return f"{count} package(s) pending upgrade. Snapshot prepared at {checked_at}."
+    if isinstance(count, int):
+        return f"{count} package(s) pending upgrade."
+    return summarize_release_notes(preview)
