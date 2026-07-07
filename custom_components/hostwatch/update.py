@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from homeassistant.components.update import UpdateDeviceClass, UpdateEntity, UpdateEntityFeature
@@ -19,6 +19,8 @@ from .maintenance import async_notify_command_run_updated
 from .release import compare_versions, get_release_manager
 from .runtime import get_runtime
 from .storage import get_storage
+
+STALE_COMMAND_RUN_AFTER = timedelta(hours=2)
 
 
 async def async_setup_entry(
@@ -80,12 +82,7 @@ class HostWatchAgentUpdateEntity(UpdateEntity):
 
     def _has_running_update_command(self) -> bool:
         """Return whether an agent update command is currently queued or running in storage."""
-        runs = get_storage(self.hass).get_recent_command_runs(self._node_id)
-        for run in runs:
-            if run.get("command_type") != "agent_update":
-                continue
-            return run.get("status") in {"queued", "running"}
-        return False
+        return _has_active_command_run(self.hass, self._node_id, "agent_update")
 
     def _refresh_pending_install_state(self) -> None:
         """Drop the optimistic install state once storage or node state confirms progress/completion."""
@@ -227,12 +224,7 @@ class HostWatchAptUpdateEntity(UpdateEntity):
 
     def _has_running_update_command(self) -> bool:
         """Return whether an APT upgrade command is currently queued or running in storage."""
-        runs = get_storage(self.hass).get_recent_command_runs(self._node_id)
-        for run in runs:
-            if run.get("command_type") != "apt_upgrade":
-                continue
-            return run.get("status") in {"queued", "running"}
-        return False
+        return _has_active_command_run(self.hass, self._node_id, "apt_upgrade")
 
     def _refresh_pending_install_state(self) -> None:
         """Drop the optimistic install state once storage or node state confirms progress/completion."""
@@ -389,6 +381,47 @@ def _format_marker(value: str | None) -> str | None:
     except ValueError:
         return value
     return dt_util.as_local(parsed).strftime("%Y-%m-%d %H:%M")
+
+
+def _has_active_command_run(hass: HomeAssistant, node_id: str, command_type: str) -> bool:
+    storage = get_storage(hass)
+    node = storage.get_node(node_id)
+    if node is None:
+        return False
+    pending_command_ids = {
+        item.get("run_id")
+        for item in node.get("pending_commands", [])
+        if isinstance(item, dict)
+    }
+    for run in storage.get_recent_command_runs(node_id):
+        if run.get("command_type") != command_type:
+            continue
+        status = run.get("status")
+        if status == "queued":
+            return run.get("id") in pending_command_ids
+        if status == "running":
+            return not _is_stale_run(run)
+        return False
+    return False
+
+
+def _is_stale_run(run: dict[str, Any]) -> bool:
+    updated_at = _parse_run_timestamp(run.get("updated_at"))
+    if updated_at is None:
+        return True
+    return datetime.now(UTC) - updated_at > STALE_COMMAND_RUN_AFTER
+
+
+def _parse_run_timestamp(value: Any) -> datetime | None:
+    if not isinstance(value, str) or not value:
+        return None
+    try:
+        parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    if parsed.tzinfo is None:
+        return parsed.replace(tzinfo=UTC)
+    return parsed.astimezone(UTC)
 
 
 def summarize_release_notes(notes: Any) -> str | None:
