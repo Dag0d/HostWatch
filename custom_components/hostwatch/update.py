@@ -281,7 +281,9 @@ class HostWatchAptUpdateEntity(UpdateEntity):
         preview = snapshot.get("preview")
         if not _apt_snapshot_has_updates(snapshot, self._installed_marker):
             return None
-        return preview if isinstance(preview, str) and preview.strip() else None
+        if not isinstance(preview, str) or not preview.strip():
+            return None
+        return format_terminal_release_notes(preview)
 
     async def async_added_to_hass(self) -> None:
         """Subscribe to node and command-run updates."""
@@ -414,3 +416,42 @@ def _apt_release_summary(
     if isinstance(count, int):
         return f"{count} package(s) pending upgrade."
     return summarize_release_notes(preview)
+
+
+def format_terminal_release_notes(text: str) -> str:
+    """Render terminal-style output as a fenced code block with cleaner section spacing."""
+    normalized = beautify_apt_release_notes(text)
+    return f"```text\n{normalized}\n```"
+
+
+def beautify_apt_release_notes(text: str) -> str:
+    """Add readable spacing between major APT output sections while preserving terminal text."""
+    headers = (
+        "The following packages were automatically installed and are no longer required:",
+        "Get more security updates through Ubuntu Pro with 'esm-apps' enabled:",
+        "Learn more about Ubuntu Pro at",
+        "The following upgrades have been deferred due to phasing:",
+        "The following packages will be upgraded:",
+        "The following NEW packages will be installed:",
+        "The following packages will be REMOVED:",
+        "The following packages have been kept back:",
+        "Need to get ",
+        "After this operation,",
+        "Inst ",
+        "Conf ",
+    )
+    output: list[str] = []
+    previous_nonempty = False
+    for raw_line in text.rstrip("\n").splitlines():
+        line = raw_line.rstrip()
+        if not line:
+            if output and output[-1] != "":
+                output.append("")
+            previous_nonempty = False
+            continue
+        is_header = any(line.startswith(header) for header in headers)
+        if is_header and previous_nonempty and output and output[-1] != "":
+            output.append("")
+        output.append(line)
+        previous_nonempty = True
+    return "\n".join(output)
