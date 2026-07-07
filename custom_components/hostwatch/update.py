@@ -177,7 +177,6 @@ class HostWatchAptUpdateEntity(UpdateEntity):
 
     _attr_has_entity_name = True
     _attr_translation_key = "apt_packages"
-    _attr_device_class = UpdateDeviceClass.SOFTWARE
     _attr_supported_features = UpdateEntityFeature.INSTALL | UpdateEntityFeature.PROGRESS
     _attr_should_poll = False
 
