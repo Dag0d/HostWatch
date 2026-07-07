@@ -39,3 +39,10 @@ get_bootloader_summary:
           selector:
             boolean:
 refresh_agent_updates:
+prepare_apt_updates:
+  fields:
+    device_id:
+      selector:
+        device:
+          integration: hostwatch
+          multiple: true

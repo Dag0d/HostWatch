@@ -103,6 +103,9 @@
     "update": {
       "agent": {
         "name": "Agent"
+      },
+      "apt_packages": {
+        "name": "APT Packages"
       }
     }
   },
@@ -156,6 +159,16 @@
     "refresh_agent_updates": {
       "name": "Refresh agent updates",
       "description": "Refresh the latest signed HostWatch agent release metadata immediately."
+    },
+    "prepare_apt_updates": {
+      "name": "Prepare APT updates",
+      "description": "Run an explicit APT update snapshot for all active nodes or for the selected HostWatch devices. The snapshot powers the APT packages update entity and its changelog.",
+      "fields": {
+        "device_id": {
+          "name": "HostWatch devices",
+          "description": "Optionally limit the APT update snapshot to one or more HostWatch devices. Leave empty to include all active HostWatch nodes."
+        }
+      }
     }
   },
   "exceptions": {

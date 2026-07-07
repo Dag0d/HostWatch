@@ -14,6 +14,7 @@ HostWatch currently provides:
 - periodic heartbeats and metric uploads from each node
 - sensors for CPU, load, memory, root filesystem, uptime, and optional temperatures
 - APT update checks
+- an explicit APT packages `update` entity per node, powered by a manual snapshot action
 - Raspberry Pi bootloader checks
 - a Home Assistant integrated maintenance panel with live output
 - a Home Assistant `update` entity for signed HostWatch agent releases

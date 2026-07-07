@@ -19,10 +19,12 @@ from .const import (
     SERVICE_REFRESH_AGENT_UPDATES,
     SERVICE_GET_APT_SUMMARY,
     SERVICE_GET_BOOTLOADER_SUMMARY,
+    SERVICE_PREPARE_APT_UPDATES,
 )
-from .maintenance import async_setup_maintenance
+from .maintenance import async_notify_command_run_updated, async_setup_maintenance
 from .notifications import (
     async_validate_notification_translations,
+    get_target_nodes,
     get_apt_summary,
     get_bootloader_summary,
 )
@@ -37,6 +39,11 @@ SUMMARY_SERVICE_SCHEMA = vol.Schema(
         vol.Optional(ATTR_DEVICE_ID): vol.Any(cv.ensure_list, [str]),
         vol.Optional("create_notification", default=True): cv.boolean,
         vol.Optional("include_raw", default=False): cv.boolean,
+    }
+)
+TARGET_SERVICE_SCHEMA = vol.Schema(
+    {
+        vol.Optional(ATTR_DEVICE_ID): vol.Any(cv.ensure_list, [str]),
     }
 )
 
@@ -101,6 +108,37 @@ async def async_setup(hass: HomeAssistant, config: dict) -> bool:
             DOMAIN,
             SERVICE_REFRESH_AGENT_UPDATES,
             handle_refresh_agent_updates,
+        )
+    if not hass.services.has_service(DOMAIN, SERVICE_PREPARE_APT_UPDATES):
+        async def handle_prepare_apt_updates(call: ServiceCall) -> ServiceResponse:
+            nodes = get_target_nodes(hass, _device_ids_from_call(call))
+            queued_nodes: list[dict[str, Any]] = []
+            storage = get_storage(hass)
+            for node in nodes:
+                run = await storage.async_create_command_run(node["node_id"], "prepare_apt_update")
+                if run is None:
+                    continue
+                async_notify_command_run_updated(hass, node["node_id"])
+                queued_nodes.append(
+                    {
+                        "node_id": node["node_id"],
+                        "node_name": node.get("node_name", node["node_id"]),
+                        "run_id": run["id"],
+                    }
+                )
+            response = {
+                "command_type": "prepare_apt_update",
+                "node_count": len(queued_nodes),
+                "nodes": queued_nodes,
+            }
+            return response if call.return_response else None
+
+        hass.services.async_register(
+            DOMAIN,
+            SERVICE_PREPARE_APT_UPDATES,
+            handle_prepare_apt_updates,
+            schema=TARGET_SERVICE_SCHEMA,
+            supports_response=SupportsResponse.OPTIONAL,
         )
     return True
 

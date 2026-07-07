@@ -56,7 +56,7 @@ def get_apt_summary(
     create_notification: bool = True,
 ) -> dict[str, Any]:
     """Build an APT summary response and optionally create a translated notification."""
-    nodes = _get_target_nodes(hass, device_ids)
+    nodes = get_target_nodes(hass, device_ids)
     generated_at = dt_util.now()
     response_nodes: list[dict[str, Any]] = []
     total_updates = 0
@@ -116,7 +116,7 @@ def get_bootloader_summary(
     create_notification: bool = True,
 ) -> dict[str, Any]:
     """Build a bootloader summary response and optionally create a translated notification."""
-    nodes = _get_target_nodes(hass, device_ids)
+    nodes = get_target_nodes(hass, device_ids)
     generated_at = dt_util.now()
     response_nodes: list[dict[str, Any]] = []
     total_pending_updates = 0
@@ -185,7 +185,7 @@ def get_bootloader_summary(
     return response
 
 
-def _get_target_nodes(hass: HomeAssistant, device_ids: list[str] | None) -> list[dict[str, Any]]:
+def get_target_nodes(hass: HomeAssistant, device_ids: list[str] | None) -> list[dict[str, Any]]:
     storage = get_storage(hass)
     active_node_ids = {entry.data.get("node_id") for entry in hass.config_entries.async_entries(DOMAIN)}
     all_nodes = [node for node in storage.iter_nodes() if node.get("node_id") in active_node_ids]

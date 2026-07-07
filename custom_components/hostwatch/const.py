@@ -36,6 +36,7 @@ CONF_COMMAND_POLL_WEBHOOK_URL = "command_poll_webhook_url"
 SERVICE_GET_APT_SUMMARY = "get_apt_summary"
 SERVICE_GET_BOOTLOADER_SUMMARY = "get_bootloader_summary"
 SERVICE_REFRESH_AGENT_UPDATES = "refresh_agent_updates"
+SERVICE_PREPARE_APT_UPDATES = "prepare_apt_updates"
 
 STORAGE_VERSION = 1
 STORAGE_KEY = f"{DOMAIN}_nodes"
